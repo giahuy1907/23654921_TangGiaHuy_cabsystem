@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Đăng ký tài khoản
+  version: 1.0.0
+  description: REST API v1 cho CAB System. Đặc tả được xây dựng từ tài liệu nghiệp
+    vụ CAB System; các endpoint và schema là API contract đề xuất.
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local
+- url: https://api.example.com/api/v1
+  description: Production example
+tags: &id001
+- Authentication
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    TripId:
+      name: trip_id
+      in: path
+      required: true
+      schema:
+        type: string
+    PaymentId:
+      name: payment_id
+      in: path
+      required: true
+      schema:
+        type: string
+    UserId:
+      name: user_id
+      in: path
+      required: true
+      schema:
+        type: string
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: TRIP_NOT_FOUND
+            message:
+              type: string
+              example: Trip does not exist.
+            details:
+              type: object
+              additionalProperties: true
+        meta:
+          type: object
+          properties:
+            request_id:
+              type: string
+              example: req_01JABCXYZ
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: usr_001
+        role:
+          type: string
+          enum:
+          - CUSTOMER
+          - DRIVER
+          - OPERATOR
+          - ADMINISTRATOR
+        full_name:
+          type: string
+          example: Nguyen Van A
+        phone:
+          type: string
+          example: 0901234567
+        email:
+          type: string
+          format: email
+          example: a@example.com
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - INACTIVE
+    Location:
+      type: object
+      required:
+      - latitude
+      - longitude
+      - address
+      properties:
+        latitude:
+          type: number
+          format: double
+          example: 10.776889
+        longitude:
+          type: number
+          format: double
+          example: 106.700806
+        address:
+          type: string
+          example: Chợ Bến Thành, Quận 1, TP.HCM
+    Trip:
+      type: object
+      properties:
+        trip_id:
+          type: string
+          example: trip_001
+        customer_id:
+          type: string
+          example: cus_001
+        driver_id:
+          type: string
+          nullable: true
+          example: drv_001
+        vehicle_id:
+          type: string
+          nullable: true
+          example: veh_001
+        pickup:
+          $ref: '#/components/schemas/Location'
+        destination:
+          $ref: '#/components/schemas/Location'
+        vehicle_type:
+          type: string
+          enum:
+          - CAR
+          - BIKE
+          - SUV
+          example: CAR
+        status:
+          type: string
+          enum:
+          - SEARCHING_DRIVER
+          - DRIVER_ASSIGNED
+          - DRIVER_EN_ROUTE
+          - DRIVER_ARRIVED
+          - PASSENGER_PICKED_UP
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+        fare_amount:
+          type: number
+          format: double
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+    Payment:
+      type: object
+      properties:
+        payment_id:
+          type: string
+          example: pay_001
+        trip_id:
+          type: string
+          example: trip_001
+        method:
+          type: string
+          enum:
+          - CASH
+          - ELECTRONIC
+        amount:
+          type: number
+          format: double
+          example: 95000
+        currency:
+          type: string
+          example: VND
+        status:
+          type: string
+          enum:
+          - PENDING
+          - SUCCESS
+          - FAILED
+        provider_reference:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    Rating:
+      type: object
+      properties:
+        rating_id:
+          type: string
+          example: rating_001
+        trip_id:
+          type: string
+          example: trip_001
+        customer_id:
+          type: string
+          example: cus_001
+        driver_id:
+          type: string
+          example: drv_001
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comment:
+          type: string
+          nullable: true
+          example: Rất tốt.
+paths:
+  /auth/register:
+    post:
+      summary: Đăng ký tài khoản
+      tags: *id001
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+                  meta:
+                    type: object
+                    additionalProperties: true
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+              - role
+              - full_name
+              - phone
+              - email
+              - password
+              properties:
+                role:
+                  type: string
+                  enum:
+                  - CUSTOMER
+                  - DRIVER
+                full_name:
+                  type: string
+                phone:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+security:
+- bearerAuth: []
