@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Nhận kết quả từ Payment Provider
+  description: API Nhận kết quả từ Payment Provider.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /payments/callback:
+    post:
+      tags:
+      - Payment
+      summary: Nhận kết quả từ Payment Provider
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentCallbackRequest'
+      responses:
+        '200':
+          description: Đã ghi nhận kết quả
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentResponse'
+components:
+  schemas:
+    PaymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            payment_id:
+              type: string
+            trip_id:
+              type: string
+            method:
+              type: string
+            amount:
+              type: number
+            currency:
+              type: string
+            status:
+              type: string
+            provider_reference:
+              type: string
+              nullable: true
+    PaymentCallbackRequest:
+      type: object
+      required:
+      - payment_id
+      - status
+      properties:
+        payment_id:
+          type: string
+        transaction_id:
+          type: string
+        status:
+          type: string
+          enum:
+          - SUCCESS
+          - FAILED
+        amount:
+          type: number
+        currency:
+          type: string
+        provider_reference:
+          type: string

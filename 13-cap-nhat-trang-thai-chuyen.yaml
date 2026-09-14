@@ -1,0 +1,133 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Cập nhật trạng thái chuyến
+  description: API Cập nhật trạng thái chuyến.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /trips/{trip_id}/status:
+    patch:
+      tags:
+      - Trip
+      summary: Cập nhật trạng thái chuyến
+      parameters:
+      - name: trip_id
+        in: path
+        required: true
+        description: ID của trip_id
+        schema:
+          type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TripStatusRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TripResponse'
+        '403':
+          description: Không có quyền
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Chuyển trạng thái không hợp lệ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Location:
+      type: object
+      required:
+      - latitude
+      - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        address:
+          type: string
+    TripStatusRequest:
+      type: object
+      required:
+      - status
+      properties:
+        status:
+          type: string
+          enum:
+          - SEARCHING_DRIVER
+          - DRIVER_ASSIGNED
+          - DRIVER_EN_ROUTE
+          - DRIVER_ARRIVED
+          - PASSENGER_PICKED_UP
+          - IN_PROGRESS
+          - COMPLETED
+          - CANCELLED
+    TripResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            trip_id:
+              type: string
+            customer_id:
+              type: string
+            driver_id:
+              type: string
+              nullable: true
+            status:
+              type: string
+            vehicle_type:
+              type: string
+            pickup:
+              $ref: '#/components/schemas/Location'
+            destination:
+              $ref: '#/components/schemas/Location'
+            fare_amount:
+              type: number
+              nullable: true
+            created_at:
+              type: string
+              format: date-time
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
