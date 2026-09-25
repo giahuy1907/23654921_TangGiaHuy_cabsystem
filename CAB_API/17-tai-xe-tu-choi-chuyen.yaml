@@ -1,0 +1,59 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Tài xế từ chối chuyến
+  description: API Tài xế từ chối chuyến.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /trips/{trip_id}/reject:
+    post:
+      tags:
+      - Trip
+      summary: Tài xế từ chối chuyến
+      parameters:
+      - name: trip_id
+        in: path
+        required: true
+        description: ID của trip_id
+        schema:
+          type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectTripRequest'
+      responses:
+        '200':
+          description: Từ chối thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+components:
+  schemas:
+    RejectTripRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          additionalProperties: true

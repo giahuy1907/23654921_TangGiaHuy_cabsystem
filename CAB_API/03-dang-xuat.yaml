@@ -1,0 +1,26 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Đăng xuất
+  description: API Đăng xuất.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /auth/logout:
+    post:
+      tags:
+      - Authentication
+      summary: Đăng xuất
+      responses:
+        '204':
+          description: Đăng xuất thành công

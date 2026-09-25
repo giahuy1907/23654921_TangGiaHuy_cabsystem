@@ -1,0 +1,92 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Theo dõi chuyến
+  description: API Theo dõi chuyến.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /trips/{trip_id}/tracking:
+    get:
+      tags:
+      - Trip
+      summary: Theo dõi chuyến
+      parameters:
+      - name: trip_id
+        in: path
+        required: true
+        description: ID của trip_id
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Trạng thái và vị trí tài xế
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TrackingResponse'
+        '404':
+          description: Không tìm thấy chuyến
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    Location:
+      type: object
+      required:
+      - latitude
+      - longitude
+      properties:
+        latitude:
+          type: number
+          format: double
+        longitude:
+          type: number
+          format: double
+        address:
+          type: string
+    TrackingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            trip_id:
+              type: string
+            status:
+              type: string
+            driver_location:
+              $ref: '#/components/schemas/Location'
+            estimated_arrival_minutes:
+              type: integer
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true

@@ -1,0 +1,65 @@
+openapi: 3.0.3
+info:
+  title: CAB System API - Cập nhật thông tin tài xế
+  description: API Cập nhật thông tin tài xế.
+  version: 1.0.0
+servers:
+- url: http://localhost:8080/api/v1
+  description: Local server
+tags:
+- name: Authentication
+- name: Customer
+- name: Driver
+- name: Trip
+- name: Payment
+- name: Rating
+- name: Operator
+- name: Report
+paths:
+  /drivers/me:
+    put:
+      tags:
+      - Driver
+      summary: Cập nhật thông tin tài xế
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DriverUpdateRequest'
+      responses:
+        '200':
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DriverResponse'
+components:
+  schemas:
+    DriverUpdateRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+        phone:
+          type: string
+    DriverResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            full_name:
+              type: string
+            phone:
+              type: string
+            rating:
+              type: number
+              format: float
+            status:
+              type: string
