@@ -1,0 +1,132 @@
+%% ===================================================================
+%% DOMAIN DIAGRAM — CAB SYSTEM (Domain-Driven Design)
+%% Nguyên tắc High Cohesion / Low Coupling:
+%%   - Mỗi Subdomain (Core / Supporting / Generic) là 1 subgraph lớn.
+%%   - Trong 1 Subdomain, các Bounded Context liên quan nghiệp vụ chặt
+%%     được nhóm cùng nhau -> HIGH COHESION (thay đổi cùng nhau).
+%%   - Trong 1 Bounded Context, chỉ Aggregate Root + Entity/VO trực
+%%     tiếp thuộc Aggregate đó được liệt kê -> không rò rỉ dữ liệu
+%%     giữa các Aggregate khác nhau.
+%%   - Liên kết GIỮA các Bounded Context / Subdomain chỉ đi qua:
+%%       (a) Domain Event (mũi tên liền, có nhãn)   -> async, loose coupling
+%%       (b) Tham chiếu ID / Read Model (mũi tên đứt) -> không nhúng Aggregate
+%%       (c) Open Host Service (mũi tên chấm đậm)   -> hạ tầng dùng chung
+%%     Không có mũi tên nào xuyên thẳng vào bên trong 1 Aggregate của
+%%     context khác -> đảm bảo LOW COUPLING giữa các subdomain.
+%% ===================================================================
+
+flowchart TB
+
+    %% ---------------- CORE DOMAIN ----------------
+    subgraph CORE["🟥 CORE DOMAIN — lõi cạnh tranh"]
+        direction TB
+
+        subgraph TRIP_CTX["Bounded Context: Trip Management"]
+            direction TB
+            Trip[["Trip<br/>(Aggregate Root)"]]
+            TripHistory["TripStatusHistory<br/>(Entity)"]
+            TripVO["PickupLocation, DestinationLocation,<br/>VehicleType, TripStatus<br/>(Value Objects)"]
+            Trip --- TripHistory
+            Trip --- TripVO
+        end
+
+        subgraph DISPATCH_CTX["Bounded Context: Dispatch & Matching"]
+            direction TB
+            MatchingRequest[["MatchingRequest<br/>(Aggregate Root)"]]
+            DriverCandidate["DriverCandidate<br/>(Entity)"]
+            DispatchVO["SearchRadius, ResponseTimeout,<br/>DriverDistance<br/>(Value Objects)"]
+            MatchingRequest --- DriverCandidate
+            MatchingRequest --- DispatchVO
+        end
+    end
+
+    %% ---------------- SUPPORTING DOMAIN ----------------
+    subgraph SUPPORT["🟦 SUPPORTING DOMAIN"]
+        direction TB
+
+        subgraph CUST_CTX["Bounded Context: Customer"]
+            Customer[["CustomerProfile<br/>(Aggregate Root)"]]
+        end
+
+        subgraph DRV_CTX["Bounded Context: Driver"]
+            direction TB
+            DriverProfile[["DriverProfile<br/>(Aggregate Root)"]]
+            Vehicle["Vehicle<br/>(Entity)"]
+            DriverVO["GeoLocation, DriverStatus,<br/>LicensePlate<br/>(Value Objects)"]
+            DriverProfile --- Vehicle
+            DriverProfile --- DriverVO
+        end
+
+        subgraph PRICE_CTX["Bounded Context: Pricing & Fare"]
+            FareCalc[["FareCalculation<br/>(Aggregate Root)"]]
+        end
+
+        subgraph PAY_CTX["Bounded Context: Payment"]
+            Payment[["Payment<br/>(Aggregate Root)"]]
+        end
+
+        subgraph RATE_CTX["Bounded Context: Rating & Review"]
+            Rating[["Rating<br/>(Aggregate Root)"]]
+        end
+    end
+
+    %% ---------------- GENERIC DOMAIN ----------------
+    subgraph GENERIC["🟩 GENERIC DOMAIN"]
+        direction TB
+
+        subgraph IAM_CTX["Bounded Context: Identity & Access"]
+            Account[["Account<br/>(Aggregate Root)"]]
+        end
+
+        subgraph NOTI_CTX["Bounded Context: Notification"]
+            Notification[["Notification<br/>(Aggregate Root)"]]
+        end
+
+        subgraph REPORT_CTX["Bounded Context: Reporting & Analytics"]
+            RevenueReport["RevenueReport<br/>(Read Model - CQRS)"]
+        end
+
+        subgraph ADMIN_CTX["Bounded Context: Admin & Audit"]
+            AuditLog[["AuditLog<br/>(Aggregate Root)"]]
+        end
+    end
+
+    %% ===================================================================
+    %% LIÊN KẾT GIỮA CÁC BOUNDED CONTEXT (chỉ qua Event / ID ref / OHS)
+    %% ===================================================================
+
+    %% --- Core <-> Core: Partnership (2 context lõi phối hợp chặt) ---
+    Trip -- "event: TripRequested" --> MatchingRequest
+    MatchingRequest -- "event: TripAssigned" --> Trip
+
+    %% --- Core -> Supporting: Customer/Supplier qua tham chiếu ID ---
+    Trip -. "customerId (ref)" .-> Customer
+    Trip -. "driverId (ref)" .-> DriverProfile
+    MatchingRequest -. "đọc trạng thái/vị trí (ACL)" .-> DriverProfile
+
+    %% --- Core -> Supporting: qua Domain Event ---
+    Trip -- "event: TripCompleted" --> FareCalc
+    FareCalc -- "event: FareCalculated" --> Payment
+    Trip -- "event: TripCompleted" --> Rating
+
+    %% --- Generic -> Core/Supporting: Open Host Service (xác thực) ---
+    Account == "JWT / claims (OHS)" ==> CORE
+    Account == "JWT / claims (OHS)" ==> SUPPORT
+
+    %% --- Core/Supporting -> Generic: Conformist (subscriber sự kiện) ---
+    Trip -- "event stream" --> Notification
+    Payment -- "event stream" --> Notification
+    Trip -- "event stream (CQRS)" --> RevenueReport
+    Payment -- "event stream (CQRS)" --> RevenueReport
+    Account -- "event: RoleAssigned" --> AuditLog
+
+    %% ===================================================================
+    %% STYLE — phân biệt trực quan 3 nhóm Subdomain
+    %% ===================================================================
+    classDef core fill:#F5C4B3,stroke:#993C1D,color:#4A1B0C,stroke-width:1px;
+    classDef support fill:#B5D4F4,stroke:#185FA5,color:#042C53,stroke-width:1px;
+    classDef generic fill:#D3D1C7,stroke:#5F5E5A,color:#2C2C2A,stroke-width:1px;
+
+    class Trip,TripHistory,TripVO,MatchingRequest,DriverCandidate,DispatchVO core;
+    class Customer,DriverProfile,Vehicle,DriverVO,FareCalc,Payment,Rating support;
+    class Account,Notification,RevenueReport,AuditLog generic;
